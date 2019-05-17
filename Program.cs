@@ -1,13 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
-using jpeg2000_decoder.Codecs;
 using jpeg2000_decoder.IO;
 
 namespace jpeg2000_decoder
 {
-    class Program
-    {
-        public class Logger 
+    public class Logger 
         {
             public enum Severity
             {
@@ -44,6 +42,9 @@ namespace jpeg2000_decoder
                 Log(Severity.Debug, message);
             }
         }
+    class Program
+    {
+        
 
         static void Main(string[] args)
         {
@@ -67,7 +68,8 @@ Filename provided: {inputFileName}");
                 
                 var decoder = new Decoder();
                 var randomAccessFile = new RandomAccessFile(inputFile);
-                var decoded = decoder.Decode(randomAccessFile);
+                //var decoded = decoder.Decode(randomAccessFile);
+                decoder.Decode(randomAccessFile);
                 // //todo different codecs
                 // Codec codec = null;
                 // // switch(false) {
