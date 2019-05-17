@@ -74,6 +74,11 @@ namespace jpeg2000_decoder.IO
             return (ushort)(Read() << 8 | Read());
         }
 
+        public ushort ReadUnsignedShort() 
+        {
+            return ReadShort();
+        }
+
         public int Read()
         {
             if (_pos < _maxBytes)
@@ -111,7 +116,7 @@ namespace jpeg2000_decoder.IO
                 // There still is some data to read
                 if (_pos < _maxBytes)
                 { // We can read some data from buffer
-                    clen = _maxBytes - Position;
+                    clen = _maxBytes - _pos;
                     if (clen > length) clen = length;
                     Array.Copy(_buffer, _pos, buffer, offset, clen);
                     _pos += clen;
