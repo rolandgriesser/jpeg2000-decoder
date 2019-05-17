@@ -8,5 +8,6 @@ namespace jpeg2000_decoder.IO
         uint ReadInt();
         ushort ReadShort();
         ulong ReadLong();
+        void ReadFully(byte[] buffer, long offset, long length);
     }
 }
