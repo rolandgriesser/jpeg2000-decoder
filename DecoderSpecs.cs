@@ -1,6 +1,8 @@
 
 using jpeg2000_decoder.Entropy;
 using jpeg2000_decoder.Image;
+using jpeg2000_decoder.Quantization;
+using jpeg2000_decoder.ROI;
 using jpeg2000_decoder.Wavelet.Synthesis;
 
 public class DecoderSpecs {
@@ -9,16 +11,16 @@ public class DecoderSpecs {
     public ModuleSpec iccs;
 
     /** ROI maxshift value specifications */
-    //public MaxShiftSpec rois;
+    public MaxShiftSpec rois;
 
     /** Quantization type specifications */
-    //public QuantTypeSpec qts;
+    public QuantTypeSpec qts;
 
     /** Quantization normalized base step size specifications */
-    //public QuantStepSizeSpec qsss;
+    public QuantStepSizeSpec qsss;
 
     /** Number of guard bits specifications */
-    //public GuardBitsSpec gbs;
+    public GuardBitsSpec gbs;
 
     /** Analysis wavelet filters specifications */
     public SynWTFilterSpec wfs;
@@ -95,9 +97,9 @@ public class DecoderSpecs {
      * */
     public DecoderSpecs(int nt,int nc) {
         // Quantization
-        // qts  = new QuantTypeSpec(nt,nc,ModuleSpec.SPEC_TYPE_TILE_COMP);
-        // qsss = new QuantStepSizeSpec(nt,nc,ModuleSpec.SPEC_TYPE_TILE_COMP);
-        // gbs  = new GuardBitsSpec(nt,nc,ModuleSpec.SPEC_TYPE_TILE_COMP);
+        qts  = new QuantTypeSpec(nt,nc,ModuleSpec.SPEC_TYPE_TILE_COMP);
+        qsss = new QuantStepSizeSpec(nt,nc,ModuleSpec.SPEC_TYPE_TILE_COMP);
+        gbs  = new GuardBitsSpec(nt,nc,ModuleSpec.SPEC_TYPE_TILE_COMP);
 
         // Wavelet transform
         wfs = new SynWTFilterSpec(nt,nc,ModuleSpec.SPEC_TYPE_TILE_COMP);
