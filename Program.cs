@@ -66,21 +66,10 @@ Filename provided: {inputFileName}");
             {
                 var inputFile = File.OpenRead(inputFileName);
                 
-                var decoder = new Decoder();
+                var decoder = new Decoder(new Util.ParameterList());
                 var randomAccessFile = new RandomAccessFile(inputFile);
                 //var decoded = decoder.Decode(randomAccessFile);
                 decoder.Decode(randomAccessFile);
-                // //todo different codecs
-                // Codec codec = null;
-                // // switch(false) {
-                //    codec = new CodecJP2(); 
-                // // }
-                // if(codec == null) {
-                //     Logger.Error("Couldn't find suitable codec to decode file.");
-                //     return;
-                // }
-
-                // var image = codec.Read(inputFile);
             } 
             catch(Exception e) {
                 Logger.Error($"Problem reading input file.\nException: {e.Message}");

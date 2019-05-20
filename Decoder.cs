@@ -8,39 +8,14 @@ using jpeg2000_decoder.IO;
 using jpeg2000_decoder;
 using System.Collections.Generic;
 using System.Collections;
-
-public class ParameterList : IReadOnlyDictionary<string, object>
-{
-    public ParameterList(IDictionary<string, object> parameters)
-    {
-        _backingDict = parameters != null ? new Dictionary<string, object>(parameters) : new Dictionary<string, object>();
-    }
-    private Dictionary<string, object> _backingDict;
-    public object this[string key] => _backingDict.ContainsKey(key) ? _backingDict[key] : null;
-
-    public IEnumerable<string> Keys => _backingDict.Keys;
-
-    public IEnumerable<object> Values => _backingDict.Values;
-
-    public int Count => _backingDict.Count;
-
-    public bool ContainsKey(string key) => _backingDict.ContainsKey(key);
-
-    public IEnumerator<KeyValuePair<string, object>> GetEnumerator() => _backingDict.GetEnumerator();
-
-    public bool TryGetValue(string key, out object value) => _backingDict.TryGetValue(key, out value);
-
-    IEnumerator IEnumerable.GetEnumerator() => _backingDict.GetEnumerator();
-
-    public bool Debug => ((string)this["debug"] ?? "on") == "on";
-}
+using jpeg2000_decoder.Util;
 
 public class Decoder
 {
     public ParameterList ParameterList { get; private set; }
-    public Decoder(IDictionary<string, object> parameterList = null)
+    public Decoder(ParameterList pl)
     {
-        ParameterList = new ParameterList(parameterList);
+        this.ParameterList = pl;
     }
 
     public void Decode(IRandomAccessIO input)
@@ -62,7 +37,7 @@ public class Decoder
         catch (EndOfFileException e)
         {
             Logger.Error("Codestream too short or bad header, unable to decode.");
-            if(ParameterList.Debug)
+            if(ParameterList.getParameter("debug") == "on")
             {
                 Logger.Warning(e.StackTrace);
             }

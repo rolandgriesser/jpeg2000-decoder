@@ -43,6 +43,7 @@
 
 
 using System;
+using jpeg2000_decoder.Util;
 /**
 * This class extends ModuleSpec and is responsible of Integer specifications
 * for each tile-component.
@@ -110,8 +111,8 @@ public class IntegerSpec : ModuleSpec {
 	bool[] tileSpec = null; // Tiles concerned by the specification
 	bool[] compSpec = null; // Components concerned by the specification
 	
-	while(stk.hasMoreTokens()) {
-	    word = stk.nextToken();
+	while(stk.HasMoreTokens()) {
+	    word = stk.NextToken();
             
 	    switch(word[0]) {
 	    case 't': // Tiles specification

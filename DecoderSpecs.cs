@@ -1,4 +1,8 @@
 
+using jpeg2000_decoder.Entropy;
+using jpeg2000_decoder.Image;
+using jpeg2000_decoder.Wavelet.Synthesis;
+
 public class DecoderSpecs {
 
     /** ICC Profiling specifications */

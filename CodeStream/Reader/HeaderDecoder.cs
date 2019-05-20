@@ -4,6 +4,7 @@ using System.IO;
 using jpeg2000_decoder.Entropy;
 using jpeg2000_decoder.Exceptions;
 using jpeg2000_decoder.IO;
+using jpeg2000_decoder.Util;
 using jpeg2000_decoder.Wavelet;
 using jpeg2000_decoder.Wavelet.Synthesis;
 
