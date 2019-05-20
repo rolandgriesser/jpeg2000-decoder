@@ -40,6 +40,9 @@
  * 
  * Copyright (c) 1999/2000 JJ2000 Partners.
  * */
+using jpeg2000_decoder.Util;
+using System;
+
 namespace jpeg2000_decoder.Quantization {
 
 
@@ -49,7 +52,7 @@ namespace jpeg2000_decoder.Quantization {
  *
  * @see ModuleSpec
  * */
-public class QuantStepSizeSpec extends ModuleSpec {
+public class QuantStepSizeSpec : ModuleSpec {
 
     /** 
      * Constructs an empty 'QuantStepSizeSpec' with specified number of
@@ -62,8 +65,8 @@ public class QuantStepSizeSpec extends ModuleSpec {
      * @param type the type of the specification module i.e. tile specific,
      * component specific or both.
      * */
-    public QuantStepSizeSpec(int nt, int nc, byte type) {
-	super(nt,nc,type);
+    public QuantStepSizeSpec(int nt, int nc, byte type): base(nt, nc, type) {
+	
     }
 
     /**
@@ -79,12 +82,12 @@ public class QuantStepSizeSpec extends ModuleSpec {
      *
      * @param pl The ParameterList
      * */
-    public QuantStepSizeSpec(int nt,int nc,byte type,ParameterList pl) {
-        super(nt, nc, type);
+    public QuantStepSizeSpec(int nt,int nc,byte type,ParameterList pl): base(nt, nc, type) {
+
 
 	String param = pl.getParameter("Qstep");
 	if(param==null) {
-	    throw new IllegalArgumentException("Qstep option not specified");
+	    throw new ArgumentException("Qstep option not specified");
 	}
 
 	// Parse argument
@@ -92,14 +95,14 @@ public class QuantStepSizeSpec extends ModuleSpec {
 	String word; // current word
 	byte curSpecType = SPEC_DEF; // Specification type of the
 	// current parameter
-	boolean[] tileSpec = null; // Tiles concerned by the specification
-	boolean[] compSpec = null; // Components concerned by the specification
-	Float value; // value of the current step size
+	bool[] tileSpec = null; // Tiles concerned by the specification
+	bool[] compSpec = null; // Components concerned by the specification
+	float value; // value of the current step size
 	
-	while(stk.hasMoreTokens()) {
-	    word = stk.nextToken().toLowerCase();
+	while(stk.HasMoreTokens()) {
+	    word = stk.NextToken().ToLower();
 	  
-	    switch(word.charAt(0)) {
+	    switch(word[0]) {
 	    case 't': // Tiles specification
  		tileSpec = parseIdx(word,nTiles);
 		if(curSpecType==SPEC_COMP_DEF)
@@ -116,16 +119,16 @@ public class QuantStepSizeSpec extends ModuleSpec {
 		break;
 	    default: // Step size value
 		try{
-		    value = new Float(word);
+		    value = float.Parse(word);
 		}
-		catch(NumberFormatException e) {
-		    throw new IllegalArgumentException("Bad parameter for "+
+		catch(FormatException e) {
+		    throw new ArgumentException("Bad parameter for "+
 						       "-Qstep option : "+
 						       word);
 		}
 
-		if (value.floatValue() <= 0.0f) {
-		    throw new IllegalArgumentException("Normalized base step "+
+		if (value <= 0.0f) {
+		    throw new ArgumentException("Normalized base step "+
 						       "must be positive : "+
 						       value);
 		}
@@ -134,20 +137,20 @@ public class QuantStepSizeSpec extends ModuleSpec {
 		if(curSpecType==SPEC_DEF) {
 		    setDefault(value);
 		} else if(curSpecType==SPEC_TILE_DEF) {
-		    for(int i=tileSpec.length-1; i>=0; i--)
+		    for(int i=tileSpec.Length-1; i>=0; i--)
 			if(tileSpec[i]) {
 			    setTileDef(i,value);
                         }
 		}
 		else if(curSpecType==SPEC_COMP_DEF){
-		    for(int i=compSpec.length-1; i>=0; i--)
+		    for(int i=compSpec.Length-1; i>=0; i--)
 			if(compSpec[i]){
 			    setCompDef(i,value);
                         }
 		}
 		else{
-		    for(int i=tileSpec.length-1; i>=0; i--){
-			for(int j=compSpec.length-1; j>=0 ; j--){
+		    for(int i=tileSpec.Length-1; i>=0; i--){
+			for(int j=compSpec.Length-1; j>=0 ; j--){
 			    if(tileSpec[i] && compSpec[j]){
 				setTileCompVal(i,j,value);
                             }
@@ -177,7 +180,7 @@ public class QuantStepSizeSpec extends ModuleSpec {
             // If some tile-component have received no specification, it takes
             // the default value defined in ParameterList
             if(ndefspec!=0){
-                setDefault(new Float(pl.getDefaultParameterList().
+                setDefault(float.Parse(pl.getDefaultParameterList().
                                      getParameter("Qstep")));
             }
             else{
@@ -201,7 +204,7 @@ public class QuantStepSizeSpec extends ModuleSpec {
                     break;
                 case SPEC_TILE_COMP:
                     specValType[0][0] = SPEC_DEF;
-                    tileCompVal.put("t0c0",null);
+                    tileCompVal.Add("t0c0",null);
                     break;
                 }
             }
