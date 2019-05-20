@@ -1,9 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using jpeg2000_decoder.Entropy;
 using jpeg2000_decoder.Exceptions;
 using jpeg2000_decoder.IO;
+using jpeg2000_decoder.ROI;
 using jpeg2000_decoder.Util;
 using jpeg2000_decoder.Wavelet;
 using jpeg2000_decoder.Wavelet.Synthesis;
@@ -77,6 +79,8 @@ namespace jpeg2000_decoder.CodeStream.Reader
         private int _cb0x = -1;
         private int _cb0y = -1;
         private bool _precinctPartitionIsUsed;
+        private byte[][] _pPMMarkerData;
+        private List<int> _tileOfTileParts;
 
         public HeaderDecoder(IRandomAccessIO input, ParameterList parameterList, HeaderInfo headerInfo)
         {
@@ -289,15 +293,15 @@ namespace jpeg2000_decoder.CodeStream.Reader
                 }
             }
 
-            // // RGN marker segment
-            // if ((_nfMarkSeg & RGN_FOUND) != 0)
-            // {
-            //     for (int i = 0; i < _nRGNMarkSeg; i++)
-            //     {
-            //         bais = new MemoryStream(_dictionary["RGN" + i]);
-            //         ReadRGN(new BEBinaryReader(bais), true, 0, 0);
-            //     }
-            // }
+            // RGN marker segment
+            if ((_nfMarkSeg & RGN_FOUND) != 0)
+            {
+                for (int i = 0; i < _nRGNMarkSeg; i++)
+                {
+                    bais = new MemoryStream(_dictionary["RGN" + i]);
+                    ReadRGN(new BEBinaryReader(bais), true, 0, 0);
+                }
+            }
 
             // // QCD marker segment
             // if ((_nfMarkSeg & QCD_FOUND) != 0)
@@ -323,15 +327,15 @@ namespace jpeg2000_decoder.CodeStream.Reader
                 ReadPOC(new BEBinaryReader(bais), true, 0, 0);
             }
 
-            // // PPM marker segments
-            // if ((_nfMarkSeg & PPM_FOUND) != 0)
-            // {
-            //     for (int i = 0; i < _nPPMMarkSeg; i++)
-            //     {
-            //         bais = new MemoryStream(_dictionary["PPM" + i]);
-            //         ReadPPM(new BEBinaryReader(bais));
-            //     }
-            // }
+            // PPM marker segments
+            if ((_nfMarkSeg & PPM_FOUND) != 0)
+            {
+                for (int i = 0; i < _nPPMMarkSeg; i++)
+                {
+                    bais = new MemoryStream(_dictionary["PPM" + i]);
+                    ReadPPM(new BEBinaryReader(bais));
+                }
+            }
 
             // Reset the hashtable
             _dictionary = null;
@@ -713,9 +717,9 @@ namespace jpeg2000_decoder.CodeStream.Reader
                     int w, h;
                     val = ms.spcod_ps[mrl - rl] = ehs.ReadUnsignedByte();
                     w = (1 << (val & 0x000F));
-                    v[0].Insert(w, 0);
+                    v[0].Insert(0, w);
                     h = (1 << (((val & 0x00F0) >> 4)));
-                    v[1].Insert(h, 0);
+                    v[1].Insert(0, h);
                 }
             }
             if (mainh)
@@ -892,9 +896,9 @@ namespace jpeg2000_decoder.CodeStream.Reader
                     int w, h;
                     val = ms.spcoc_ps[rl] = ehs.ReadUnsignedByte();
                     w = (1 << (val & 0x000F));
-                    v[0].Insert(w, 0);
+                    v[0].Insert(0, w);
                     h = (1 << (((val & 0x00F0) >> 4)));
-                    v[1].Insert(h, 0);
+                    v[1].Insert(0, h);
                 }
             }
             if (mainh)
@@ -973,7 +977,7 @@ namespace jpeg2000_decoder.CodeStream.Reader
             {
                 // Creates new arrays
                 change = new int[ntotChg][];
-                for(int i = 0; i < change.Length; i++) change[i] = new int[6];
+                for (int i = 0; i < change.Length; i++) change[i] = new int[6];
                 int[] tmprspoc = new int[ntotChg];
                 int[] tmpcspoc = new int[ntotChg];
                 int[] tmplyepoc = new int[ntotChg];
@@ -1003,7 +1007,7 @@ namespace jpeg2000_decoder.CodeStream.Reader
             else
             {
                 change = new int[newChg][];
-                for(int i = 0; i < change.Length; i++) change[i] = new int[6];
+                for (int i = 0; i < change.Length; i++) change[i] = new int[6];
                 ms.rspoc = new int[newChg];
                 ms.cspoc = new int[newChg];
                 ms.lyepoc = new int[newChg];
@@ -1089,23 +1093,131 @@ namespace jpeg2000_decoder.CodeStream.Reader
             }
         }
 
-    private SynWTFilter ReadFilter(BEBinaryReader ehs,int[] filtIdx){
-        int kid; // the filter id
+        private SynWTFilter ReadFilter(BEBinaryReader ehs, int[] filtIdx)
+        {
+            int kid; // the filter id
 
-        kid = filtIdx[0] = ehs.ReadUnsignedByte();
-        if (kid >= (1<<7)) {
-            throw new NotImplementedException("Custom filters not supported");
+            kid = filtIdx[0] = ehs.ReadUnsignedByte();
+            if (kid >= (1 << 7))
+            {
+                throw new NotImplementedException("Custom filters not supported");
+            }
+            // Return filter based on ID
+            switch (kid)
+            {
+                case FilterTypes.W9X7:
+                    return new SynWTFilterFloatLift9x7();
+                case FilterTypes.W5X3:
+                    return new SynWTFilterIntLift5x3();
+                default:
+                    throw new CorruptedCodestreamException("Specified wavelet filter not JPEG 2000 part I compliant");
+            }
         }
-        // Return filter based on ID
-        switch (kid) {
-        case FilterTypes.W9X7:
-            return new SynWTFilterFloatLift9x7();
-        case FilterTypes.W5X3:
-            return new SynWTFilterIntLift5x3();
-        default:
-            throw new CorruptedCodestreamException("Specified wavelet filter not JPEG 2000 part I compliant");
+
+/**
+     * Reads the PPM marker segment of the main header.
+     *
+     * @param ehs The encoder header stream.
+     *
+     * @exception IOException If an I/O error occurs while reading from the
+     * encoder header stream
+     * */
+    private void ReadPPM(BEBinaryReader ehs){
+        int curMarkSegLen;
+        int i,indx,len,off;
+        int remSegLen;
+        byte[] b;
+
+        // If first time readPPM method is called allocate arrays for packed
+        // packet data
+        if(_pPMMarkerData==null) {
+            _pPMMarkerData = new byte[_nPPMMarkSeg][];
+            _tileOfTileParts = new List<int>();
+            _decSpec.pphs.setDefault(true);
         }
+
+	// Lppm (marker length)
+        curMarkSegLen = ehs.ReadUnsignedShort();
+        remSegLen = curMarkSegLen - 3;
+
+        // Zppm (index of PPM marker)
+        indx = ehs.ReadUnsignedByte();
+
+        // Read Nppm and Ippm data 
+        _pPMMarkerData[indx] = new byte[remSegLen];
+        ehs.Read(_pPMMarkerData[indx],0,remSegLen);
+        
+        // Check marker length
+        CheckMarkerLength(ehs,"PPM marker");
     }
+
+    /**
+     * Reads the RGN marker segment of the codestream header.
+     *
+     * <p>May be used in tile or main header. If used in main header, it
+     * refers to the maxshift value of a component in all tiles. When used in
+     * tile header, only the particular tile-component is affected.</p>
+     *
+     * @param ehs The encoder header stream.
+     *
+     * @param mainh Flag indicating whether or not this marker segment is read
+     * from the main header.
+     *
+     * @param tileIdx The index of the current tile
+     *
+     * @param tpIdx Tile-part index
+     *
+     * @exception IOException If an I/O error occurs while reading from the
+     * encoder header stream
+     * */
+    private void ReadRGN(BEBinaryReader ehs, bool mainh, int tileIdx, int tpIdx){
+        int comp;           // ROI component
+        int i;              // loop variable
+        int tempComp;       // Component for
+        HeaderInfo.RGN ms = new HeaderInfo.RGN();
+
+	// Lrgn (marker length)
+        ms.lrgn = ehs.ReadUnsignedShort();
+
+        // Read component
+        ms.crgn = comp = (_nComp < 257) ? ehs.ReadUnsignedByte():
+            ehs.ReadUnsignedShort();
+        if (comp >= _nComp) {
+            throw new CorruptedCodestreamException("Invalid component "+
+                                                  "index in RGN marker"+
+                                                  comp);
+        }
+
+        // Read type of RGN.(Srgn) 
+        ms.srgn = ehs.ReadUnsignedByte();
+
+        // Check that we can handle it.
+        if(ms.srgn != Markers.SRGN_IMPLICIT)
+            throw new CorruptedCodestreamException("Unknown or unsupported "+
+                                                  "Srgn parameter in ROI "+
+                                                  "marker");
+
+	if(_decSpec.rois==null) { // No maxshift spec defined
+	    // Create needed ModuleSpec
+	    _decSpec.rois=new MaxShiftSpec(_nTiles,_nComp,
+                                          ModuleSpec.SPEC_TYPE_TILE_COMP);
+	}
+	
+        // SPrgn
+        ms.sprgn = ehs.ReadUnsignedByte();
+
+	if(mainh) {
+            _headerInfo.rgn.Add("main_c"+comp,ms);
+	    _decSpec.rois.setCompDef(comp, ms.sprgn);
+        } else {
+            _headerInfo.rgn.Add("t"+tileIdx+"_c"+comp,ms);
+	    _decSpec.rois.setTileCompVal(tileIdx,comp,ms.sprgn);
+        }
+
+        // Check marker length
+        CheckMarkerLength(ehs,"RGN marker");
+    }
+
         private void CheckMarkerLength(BEBinaryReader ehs, String str)
         {
             if (ehs.Available != 0)
