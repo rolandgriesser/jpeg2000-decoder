@@ -431,7 +431,7 @@ namespace jpeg2000_decoder.CodeStream
             {
                 String str = "\n --- POC (" + lpoc + " bytes) ---\n";
                 str += " Chg_idx RSpoc CSpoc LYEpoc REpoc CEpoc Ppoc\n";
-                for (int chg = 0; chg < rspoc.length; chg++)
+                for (int chg = 0; chg < rspoc.Length; chg++)
                 {
                     str += "   " + chg
                         + "      " + rspoc[chg]
